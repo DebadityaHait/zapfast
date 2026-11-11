@@ -1,0 +1,25 @@
+name: Personal Windows build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [fix/show-file-in-folder]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build Windows executable
+        run: cargo build --locked --release
+      - name: Upload executable
+        uses: actions/upload-artifact@v7
+        with:
+          name: zapfast-windows-show-file-fix
+          path: target/release/zapfast.exe
+          if-no-files-found: error

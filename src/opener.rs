@@ -10,6 +10,31 @@
 
 use std::path::Path;
 
+/// Opens the containing folder, selecting the file when the platform supports it.
+pub fn show_in_folder(path: &Path) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    let result = std::process::Command::new("explorer.exe")
+        .arg(format!("/select,{}", path.display()))
+        .spawn()
+        .map(|_| ())
+        .map_err(|error| error.to_string());
+    #[cfg(target_os = "macos")]
+    let result = std::process::Command::new("open")
+        .arg("-R")
+        .arg(path)
+        .spawn()
+        .map(|_| ())
+        .map_err(|error| error.to_string());
+    #[cfg(all(unix, not(target_os = "macos")))]
+    let result = linux::show_items(path);
+    #[cfg(not(any(unix, target_os = "windows")))]
+    let result: Result<(), String> = Err("Unsupported platform".into());
+    result.or_else(|error| {
+        let folder = path.parent().ok_or(error)?;
+        open::that_detached(folder).map_err(|error| error.to_string())
+    })
+}
+
 /// Opens `path` in its default application or, failing that, shows it in its
 /// folder. Blocks for up to a few seconds per attempt, so call it off the
 /// interface thread. The error names the file so the reader can go there.

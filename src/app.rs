@@ -8010,6 +8010,13 @@ impl App {
             Action::SaveAttachments { files } => {
                 self.backend.send(Command::SaveAttachments { files });
             }
+            Action::ShowFileInFolder(path) => {
+                if !path.is_file() {
+                    self.toast_error("The file is unavailable");
+                } else if let Err(error) = crate::opener::show_in_folder(&path) {
+                    self.toast_error(format!("Could not show the file: {error}"));
+                }
+            }
             Action::OpenFolder(path) => {
                 if path.is_dir() {
                     if let Err(error) = open::that_detached(&path) {
